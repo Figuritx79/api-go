@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -70,7 +71,31 @@ func createProduct(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(newProduct)
 }
 
+// Handler para buscar un producto
 func searchProduct(w http.ResponseWriter, r *http.Request) {
+
+	// Obtenemos las variables de la ruta
+	vars := mux.Vars(r)
+
+	productId, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		fmt.Fprintf(w, "ID INVALID")
+	}
+
+	for _, p := range products {
+		if p.ID == productId {
+			w.Header().Set("Content-Type", "application/json")
+
+			w.WriteHeader(http.StatusFound)
+			json.NewEncoder(w).Encode(p)
+		}
+
+	}
+}
+
+// Handler para eliminar un producto
+func delteProduct(w http.ResponseWriter, r *http.Request) {
 
 }
 
@@ -82,6 +107,9 @@ func main() {
 
 	router.HandleFunc("/products", createProduct).Methods("POST")
 
-	router.HandleFunc("/prodcuts/{id}", searchProduct).Methods("GET")
+	router.HandleFunc("/products/{id}", searchProduct).Methods("GET")
+
+	router.HandleFunc("/products/{id}", delteProduct).Methods("DELETE")
+
 	http.ListenAndServe(":8080", router)
 }
