@@ -80,7 +80,7 @@ func searchProduct(w http.ResponseWriter, r *http.Request) {
 	productId, err := strconv.Atoi(vars["id"])
 
 	if err != nil {
-		fmt.Fprintf(w, "ID INVALID")
+		fmt.Fprintf(w, "Invalid Id")
 	}
 
 	for _, p := range products {
@@ -96,13 +96,59 @@ func searchProduct(w http.ResponseWriter, r *http.Request) {
 
 // Handler para eliminar un producto
 func delteProduct(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
 
+	productId, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		fmt.Fprintf(w, "Invalid Id")
+	}
+
+	for i, p := range products {
+		if p.ID == productId {
+
+			products = append(products[:i], products[1+1:]...)
+
+			fmt.Fprintf(w, "The product with ID %v has been deleted", productId)
+		}
+	}
+}
+
+func updateProduct(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	productId, err := strconv.Atoi(vars["id"])
+
+	if err != nil {
+		fmt.Fprintf(w, "Invalid ID")
+	}
+
+	var updateProduct Product
+
+	reqBody, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	json.Unmarshal(reqBody, &updateProduct)
+
+	for i, p := range products {
+		if p.ID == productId {
+			products = append(products[:i], products[1+i:]...)
+
+			updateProduct.ID = productId
+			w.Header().Set("Content-Type", "application/json")
+			products = append(products, updateProduct)
+		}
+	}
 }
 
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/", handler)
+
 	router.HandleFunc("/products", getProducts).Methods("GET")
 
 	router.HandleFunc("/products", createProduct).Methods("POST")
@@ -110,6 +156,8 @@ func main() {
 	router.HandleFunc("/products/{id}", searchProduct).Methods("GET")
 
 	router.HandleFunc("/products/{id}", delteProduct).Methods("DELETE")
+
+	router.HandleFunc("/products/{id}", updateProduct).Methods("PUT")
 
 	http.ListenAndServe(":8080", router)
 }
